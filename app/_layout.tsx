@@ -32,7 +32,7 @@ export default function Layout() {
   return (
     <ThemeProvider value={useColorScheme() === "dark" ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: true }}>
-        <Stack.Screen name="index" options={{ title: "Home", headerShown: true }} />
+        <Stack.Screen name="/index" options={{ title: "Home", headerShown: true }} />
         <Stack.Screen name="(tabs)/products" options={{ title: "product-list" }} />
         <Stack.Screen name="(tabs)/Add-products" options={{ title: "Add Product" }} />
       </Stack>

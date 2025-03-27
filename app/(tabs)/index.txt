@@ -1,0 +1,241 @@
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  doc,
+  deleteDoc,
+  Timestamp,
+} from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
+
+interface Item {
+  id: string;
+  name: string;
+  details: string;
+  imageUri: string;
+  userId: string;
+  timestamp?: Timestamp; // Ensure Firestore Timestamp type
+}
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const [items, setItems] = useState<Item[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.log("User not authenticated.");
+      return;
+    }
+
+    setUserId(user.uid);
+
+    const q = query(
+      collection(db, "items"),
+      where("userId", "==", user.uid),
+      orderBy("timestamp", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        console.log("No items found.");
+        setItems([]);
+        return;
+      }
+
+      const itemsList: Item[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          details: data.details,
+          imageUri: data.imageUri,
+          userId: data.userId,
+          timestamp: data.timestamp ? data.timestamp as Timestamp : undefined,
+        };
+      });
+
+      setItems(itemsList);
+    });
+
+    return () => unsubscribe();
+  }, [auth.currentUser]); // 🔄 Added dependency to track user authentication changes
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace("/index");
+    } catch (error: any) {
+      console.error("Logout failed:", error.message);
+    }
+  };
+
+  const deleteItem = async (id: string, itemUserId: string) => {
+    if (userId !== itemUserId) {
+      Alert.alert("Unauthorized", "You can only delete your own products.");
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "items", id));
+      setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      Alert.alert("Error", "Failed to delete item.");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome to CRUD App</Text>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
+
+      {/* Add Product Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push("/components/AddItemScreen")} // 🔄 Fixed navigation issue
+      >
+        <Text style={styles.buttonText}>Add Product</Text>
+      </TouchableOpacity>
+
+      {/* Products List */}
+      {items.length === 0 ? (
+        <Text style={styles.noData}>No items available.</Text>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Image source={{ uri: item.imageUri }} style={styles.image} />
+              <View style={styles.textContainer}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDetails}>{item.details}</Text>
+                <Text style={styles.timestamp}>
+                  {item.timestamp
+                    ? new Date(item.timestamp.toDate()).toLocaleString() // ✅ Fixed timestamp issue
+                    : "No Date Available"}
+                </Text>
+
+                {/* Delete button (only for the owner) */}
+                {userId === item.userId && (
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => deleteItem(item.id, item.userId)}
+                  >
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333",
+  },
+  addButton: {
+    backgroundColor: "#28a745",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    alignItems: "center",
+  },
+  logoutButton: {
+    backgroundColor: "#dc3545",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: "center",
+    alignSelf: "flex-end",
+    width: 100,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  noData: {
+    textAlign: "center",
+    fontSize: 18,
+    color: "gray",
+    marginTop: 20,
+  },
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    marginVertical: 8,
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  itemDetails: {
+    fontSize: 14,
+    color: "#666",
+    marginVertical: 4,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: "gray",
+  },
+  deleteButton: {
+    marginTop: 8,
+    backgroundColor: "#dc3545",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignSelf: "flex-start",
+  },
+});

@@ -23,6 +23,7 @@
     "@types/react-native": "^0.72.8",
     "expo": "~52.0.40",
     "expo-auth-session": "^6.0.3",
+    "expo-file-system": "^18.0.12",
     "expo-font": "~13.0.4",
     "expo-image-picker": "^16.0.6",
     "expo-linear-gradient": "^14.0.2",
