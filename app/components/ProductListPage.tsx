@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { useRouter } from "expo-router";
+import { collection, getDocs, deleteDoc, doc,onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -14,31 +15,34 @@ interface Item {
 
 export default function ProductsScreen() {
   const [items, setItems] = useState<Item[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchItems();
+    const unsubscribe = onSnapshot(collection(db, "items"), async (querySnapshot) => {
+      try {
+        const storedImages = await AsyncStorage.getItem("localImages");
+        const localImages = storedImages ? JSON.parse(storedImages) : {};
+  
+        const itemsList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          details: doc.data().details,
+          imageUri: localImages[doc.id] || "",
+          timestamp: doc.data().timestamp
+            ? new Date(doc.data().timestamp.seconds * 1000).toLocaleString()
+            : "No Date",
+        }));
+  
+        setItems(itemsList);
+      } catch (error) {
+        console.error("Error fetching items:", error);
+        Alert.alert("Error", "Failed to fetch items.");
+      }
+    });
+  
+    return () => unsubscribe(); // Cleanup the listener when unmounting
   }, []);
-
-  const fetchItems = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "items"));
-      const storedImages = await AsyncStorage.getItem("localImages");
-      const localImages = storedImages ? JSON.parse(storedImages) : {};
-
-      const itemsList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        details: doc.data().details,
-        imageUri: localImages[doc.id] || "",
-        timestamp: doc.data().timestamp ? new Date(doc.data().timestamp.seconds * 1000).toLocaleString() : "No Date",
-      }));
-
-      setItems(itemsList);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-      Alert.alert("Error", "Failed to fetch items.");
-    }
-  };
+  
 
   const deleteItem = async (id: string) => {
     try {
@@ -72,9 +76,14 @@ export default function ProductsScreen() {
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemDetails}>{item.details}</Text>
                 <Text style={styles.timestamp}>{item.timestamp}</Text>
-                <TouchableOpacity style={styles.deleteButton} onPress={() => deleteItem(item.id)}>
-                  <Text style={styles.buttonText}>Delete</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.editButton} onPress={() => router.push({ pathname: "/components/EditItemScreen", params: { id: item.id, name: item.name, details: item.details, imageUri: item.imageUri } })}>
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.deleteButton} onPress={() => deleteItem(item.id)}>
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           )}
@@ -110,8 +119,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginVertical: 8,
     alignItems: "center",
-    elevation: 4, // Shadow for Android
-    shadowColor: "#000", // Shadow for iOS
+    elevation: 4,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -139,13 +148,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "gray",
   },
-  deleteButton: {
+  buttonContainer: {
+    flexDirection: "row",
     marginTop: 8,
+  },
+  editButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  deleteButton: {
     backgroundColor: "#dc3545",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
-    alignSelf: "flex-start",
   },
   buttonText: {
     color: "#fff",
