@@ -71,7 +71,7 @@ export default function ProductsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              {/* <Image source={{ uri: item.imageUri }} style={styles.image} /> */}
+              <Image source={{ uri: item.imageUri }} style={styles.image} />
               <View style={styles.textContainer}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemDetails}>{item.details}</Text>
@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  // image: {
-  //   width: 80,
-  //   height: 80,
-  //   borderRadius: 10,
-  //   marginRight: 12,
-  // },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 12,
+  },
   textContainer: {
     flex: 1,
   },
