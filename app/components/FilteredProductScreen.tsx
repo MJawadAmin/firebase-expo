@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Correct hook to access query parameters
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { getAuth } from "firebase/auth"; // Firebase authentication
 
@@ -26,33 +26,33 @@ export default function FilteredProductScreen() {
   const [filteredItems, setFilteredItems] = useState<Item[]>([]); // State for filtered items
 
   useEffect(() => {
-    try {
-      // Safely parse myItems with error handling
-      const parsedItems: Item[] = myItems ? JSON.parse(myItems) : [];
-      setItems(parsedItems);
-      setFilteredItems(parsedItems); // Initialize filteredItems with full list
-    } catch (error) {
-      console.error("Error parsing myItems:", error);
-      setItems([]); // Fallback to empty array if parsing fails
-      setFilteredItems([]); // Fallback to empty array for filtered items
-    }
-  }, [myItems]);
+    // Real-time listener for Firestore changes
+    const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
+      const updatedItems: Item[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        details: doc.data().details,
+        userId: doc.data().userId,
+        timestamp: doc.data().timestamp
+          ? new Date(doc.data().timestamp.seconds * 1000).toLocaleString()
+          : "No Date",
+      }));
+      setItems(updatedItems);
+      setFilteredItems(
+        updatedItems.filter(
+          (item) =>
+            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.details.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      ); // Update filtered items based on current search query
+    });
 
-  useEffect(() => {
-    // Filter items based on search query
-    const filtered = items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.details.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredItems(filtered);
-  }, [searchQuery, items]);
+    return () => unsubscribe(); // Cleanup listener on component unmount
+  }, [searchQuery]);
 
   const deleteItem = async (id: string) => {
     try {
       await deleteDoc(doc(db, "items", id)); // Delete from Firestore
-      setItems(items.filter((item) => item.id !== id)); // Update local state
-      setFilteredItems(filteredItems.filter((item) => item.id !== id)); // Update filtered items
     } catch (error) {
       console.error("Error deleting item:", error);
       Alert.alert("Error", "Failed to delete item.");
