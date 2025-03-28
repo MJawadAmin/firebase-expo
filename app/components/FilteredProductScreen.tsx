@@ -63,6 +63,7 @@ export default function FilteredProductScreen() {
   const deleteItem = async (id: string) => {
     try {
       await deleteDoc(doc(db, "items", id)); // Delete from Firestore
+      Alert.alert("Are you sure to delete ?");
     } catch (error) {
       console.error("Error deleting item:", error);
       Alert.alert("Error", "Failed to delete item.");

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,44 +9,14 @@ import {
   Alert,
 } from "react-native";
 import { auth } from "@/firebaseConfig";
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-import * as AuthSession from "expo-auth-session";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
-
-WebBrowser.maybeCompleteAuthSession();
+import GoogleSignInButton from "./components/GoogleSignInButton"; // Import the new component
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId:
-      "101489804369-05nt5oqvg6tgd700ld2h464o7fjjqn4q.apps.googleusercontent.com", // Web Client ID
-    redirectUri: AuthSession.makeRedirectUri(),
-  });
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(() => {
-          alert("Google Sign-In Successful!");
-          router.replace("/(tabs)");
-        })
-        .catch((error) => {
-          console.error("Google Sign-In Failed:", error.message);
-          Alert.alert("Error", "Google Sign-In Failed: " + error.message);
-        });
-    }
-  }, [response]);
 
   const signIn = async () => {
     if (!email || !password) {
@@ -86,9 +56,7 @@ const Login = () => {
         <TouchableOpacity style={styles.button} onPress={signIn}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.googleButton} onPress={() => promptAsync()}>
-          <Text style={styles.googleButtonText}>Sign in with Google</Text>
-        </TouchableOpacity>
+        <GoogleSignInButton /> Use the Google Sign-In button component
         <TouchableOpacity
           style={styles.signupLink}
           onPress={() => router.push("/components/Signup")}
@@ -139,20 +107,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  googleButton: {
-    backgroundColor: "#db4437",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  googleButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
