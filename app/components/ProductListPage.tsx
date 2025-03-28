@@ -51,9 +51,20 @@ export default function ProductsScreen() {
     }
   };
 
+  const filterMyItems = () => {
+    const myItems = items.filter((item) => item.userId === currentUser?.uid); // Filter items added by the current user
+    router.push({
+      pathname: "/components/FilteredProductScreen", // Route to next page
+      params: { myItems: JSON.stringify(myItems) }, // Pass filtered items as parameters
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Product List</Text>
+      <TouchableOpacity style={styles.filterButton} onPress={filterMyItems}>
+        <Text style={styles.filterButtonText}>Show My Products</Text>
+      </TouchableOpacity>
       {items.length === 0 ? (
         <Text style={styles.noData}>No items available.</Text>
       ) : (
@@ -67,7 +78,6 @@ export default function ProductsScreen() {
                 <Text style={styles.itemDetails}>{item.details}</Text>
                 <Text style={styles.timestamp}>{item.timestamp}</Text>
                 <View style={styles.buttonContainer}>
-                  {/* Show Edit/Delete Buttons Only for Items Added by Current User */}
                   {item.userId === currentUser?.uid && (
                     <>
                       <TouchableOpacity
@@ -111,6 +121,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 15,
     color: "#333",
+  },
+  filterButton: {
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  filterButtonText: {
+    color: "#fff",
+    fontSize: 16,
   },
   noData: {
     textAlign: "center",
