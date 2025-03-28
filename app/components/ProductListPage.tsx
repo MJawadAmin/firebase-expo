@@ -2,18 +2,22 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // Import Firebase Auth
 import { db } from "@/firebaseConfig";
 
 interface Item {
   id: string;
   name: string;
   details: string;
+  userId: string; // Include userId for identifying ownership
   timestamp?: string;
 }
 
 export default function ProductsScreen() {
   const [items, setItems] = useState<Item[]>([]);
   const router = useRouter();
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "items"), (querySnapshot) => {
@@ -22,6 +26,7 @@ export default function ProductsScreen() {
           id: doc.id,
           name: doc.data().name,
           details: doc.data().details,
+          userId: doc.data().userId,
           timestamp: doc.data().timestamp
             ? new Date(doc.data().timestamp.seconds * 1000).toLocaleString()
             : "No Date",
@@ -62,20 +67,28 @@ export default function ProductsScreen() {
                 <Text style={styles.itemDetails}>{item.details}</Text>
                 <Text style={styles.timestamp}>{item.timestamp}</Text>
                 <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/components/EditItemScreen",
-                        params: { id: item.id, name: item.name, details: item.details },
-                      })
-                    }
-                  >
-                    <Text style={styles.buttonText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.deleteButton} onPress={() => deleteItem(item.id)}>
-                    <Text style={styles.buttonText}>Delete</Text>
-                  </TouchableOpacity>
+                  {/* Show Edit/Delete Buttons Only for Items Added by Current User */}
+                  {item.userId === currentUser?.uid && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/components/EditItemScreen",
+                            params: { id: item.id, name: item.name, details: item.details },
+                          })
+                        }
+                      >
+                        <Text style={styles.buttonText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteItem(item.id)}
+                      >
+                        <Text style={styles.buttonText}>Delete</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               </View>
             </View>

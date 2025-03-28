@@ -5,14 +5,11 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { db } from "@/firebaseConfig"; // Firebase config
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth"; // Import Firebase Auth
 
 export default function AddItemScreen() {
   const [name, setName] = useState("");
   const [details, setDetails] = useState("");
   const navigation = useNavigation();
-  const auth = getAuth(); // Initialize Firebase Auth
-  const currentUser = auth.currentUser; // Get the currently logged-in user
 
   // Add item to Firestore
   const addItem = async () => {
@@ -20,25 +17,19 @@ export default function AddItemScreen() {
       Alert.alert("Error", "Please fill all fields!");
       return;
     }
-
-    if (!currentUser) {
-      Alert.alert("Error", "You must be logged in to add a product.");
-      return;
-    }
-
+  
     try {
       // Save item in Firestore
       await addDoc(collection(db, "items"), {
         name,
         details,
-        userId: currentUser.uid, // Store the user's ID
         timestamp: serverTimestamp(),
       });
-
+  
       // Reset fields
       setName("");
       setDetails("");
-
+  
       Alert.alert("Success", "Item added successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
@@ -47,7 +38,7 @@ export default function AddItemScreen() {
       Alert.alert("Error", "Failed to add item. Please try again.");
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Add New Item</Text>
