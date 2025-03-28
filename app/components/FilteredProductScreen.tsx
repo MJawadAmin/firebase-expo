@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router"; // Correct hook to access query parameters
-import { deleteDoc, doc, collection, onSnapshot } from "firebase/firestore";
+import { useRouter } from "expo-router"; // Navigation
+import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { getAuth } from "firebase/auth"; // Firebase authentication
 
@@ -16,17 +16,21 @@ interface Item {
 
 export default function FilteredProductScreen() {
   const router = useRouter();
-  const { myItems } = useLocalSearchParams<{ myItems?: string }>(); // Add type for useLocalSearchParams
   const auth = getAuth(); // Get Firebase auth instance
   const currentUser = auth.currentUser; // Get the currently authenticated user
 
-  // State for items with proper type
+  // State for items
   const [items, setItems] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>(""); // State for search query
   const [filteredItems, setFilteredItems] = useState<Item[]>([]); // State for filtered items
 
   useEffect(() => {
-    // Real-time listener for Firestore changes
+    if (!currentUser) {
+      Alert.alert("Unauthorized", "Please log in to view your products.");
+      return;
+    }
+
+    // Real-time listener for Firestore products
     const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
       const updatedItems: Item[] = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -37,23 +41,28 @@ export default function FilteredProductScreen() {
           ? new Date(doc.data().timestamp.seconds * 1000).toLocaleString()
           : "No Date",
       }));
-      setItems(updatedItems);
+
+      // Filter items to show only those added by the current user
+      const authorizedItems = updatedItems.filter(
+        (item) => item.userId === currentUser?.uid
+      );
+
+      setItems(authorizedItems);
       setFilteredItems(
-        updatedItems.filter(
+        authorizedItems.filter(
           (item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.details.toLowerCase().includes(searchQuery.toLowerCase())
         )
-      ); // Update filtered items based on current search query
+      );
     });
 
     return () => unsubscribe(); // Cleanup listener on component unmount
-  }, [searchQuery]);
+  }, [currentUser, searchQuery]);
 
   const deleteItem = async (id: string) => {
     try {
       await deleteDoc(doc(db, "items", id)); // Delete from Firestore
-      Alert.alert("Deleted Successfully are you want ?")
     } catch (error) {
       console.error("Error deleting item:", error);
       Alert.alert("Error", "Failed to delete item.");
@@ -81,27 +90,25 @@ export default function FilteredProductScreen() {
               <Text style={styles.itemDetails}>{item.details}</Text>
               <Text style={styles.timestamp}>{item.timestamp}</Text>
               {/* Render Edit/Delete buttons only for items owned by the current user */}
-              {item.userId === currentUser?.uid && (
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/components/EditItemScreen",
-                        params: { id: item.id, name: item.name, details: item.details },
-                      })
-                    }
-                  >
-                    <Text style={styles.buttonText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => deleteItem(item.id)}
-                  >
-                    <Text style={styles.buttonText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/components/EditItemScreen",
+                      params: { id: item.id, name: item.name, details: item.details },
+                    })
+                  }
+                >
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => deleteItem(item.id)}
+                >
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         />

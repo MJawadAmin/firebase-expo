@@ -6,25 +6,45 @@ import { auth } from "../../firebaseConfig";
 import ProductsScreen from "../components/ProductListPage";
 
 export default function HomeScreen() {
+  const [userName, setUserName] = useState<string | null>(null); // State for storing the user's name
   const router = useRouter();
+
+  useEffect(() => {
+    // Fetch logged-in user's name from Firebase Auth
+    const fetchUserName = () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        // If user has a displayName, use it; otherwise, fallback to email
+        setUserName(currentUser.displayName || currentUser.email || "User");
+      }
+    };
+
+    fetchUserName(); // Fetch the name when the component mounts
+  }, []);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       router.replace("/index");
+      Alert.alert("Logged out")
     } catch (error: any) {
       console.error("Logout failed:", error.message);
+      Alert.alert("Error", "Failed to logout. Please try again.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to CRUD App</Text>
+      {/* Welcome Section */}
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Hello, {userName}!</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
+      {/* App Title */}
+      <Text style={styles.title}>Welcome to CRUD App</Text>
 
       {/* Add Product Button */}
       <TouchableOpacity
@@ -43,31 +63,47 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 15,
+    backgroundColor: "#e9ecef",
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  greeting: {
+    fontSize: 15,
+    fontWeight: "normal",
+    color: "#333",
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
-    color: "#333",
+    marginVertical: 20,
+    color: "#007bff",
   },
   addButton: {
     backgroundColor: "#28a745",
     padding: 15,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 20,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   logoutButton: {
     backgroundColor: "#dc3545",
-    padding: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     borderRadius: 8,
-    marginBottom: 20,
-    alignItems: "center",
-    alignSelf: "flex-end",
-    width: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   buttonText: {
     color: "#fff",
