@@ -6,27 +6,25 @@ import { auth } from "../../firebaseConfig";
 import ProductsScreen from "../components/ProductListPage";
 
 export default function HomeScreen() {
-  const [userName, setUserName] = useState<string | null>(null); // State for storing the user's name
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch logged-in user's name from Firebase Auth
     const fetchUserName = () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
-        // If user has a displayName, use it; otherwise, fallback to email
-        setUserName(currentUser.displayName || currentUser.email || "User");
+        setUserName(currentUser.displayName || "User");
       }
     };
-
-    fetchUserName(); // Fetch the name when the component mounts
+    fetchUserName();
   }, []);
+  
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       router.replace("/index");
-      Alert.alert("Logged out")
+      Alert.alert("Logged out");
     } catch (error: any) {
       console.error("Logout failed:", error.message);
       Alert.alert("Error", "Failed to logout. Please try again.");
@@ -35,27 +33,37 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Welcome Section */}
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {userName}!</Text>
+        <Text style={styles.greeting}>👋 Hello, {userName}</Text>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.buttonText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
-      {/* App Title */}
-      <Text style={styles.title}>Welcome to CRUD App</Text>
+      {/* Title */}
+      <Text style={styles.title}>🛒 Welcome to MyShop</Text>
 
-      {/* Add Product Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("/components/AddItemScreen")}
-      >
-        <Text style={styles.buttonText}>Add Product</Text>
-      </TouchableOpacity>
+      {/* Button Row */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={() => router.push("/components/AddItemScreen")}
+        >
+          <Text style={styles.buttonText}>+ Add Product</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.smallButtonSecondary}
+          onPress={() => Alert.alert("Show My Products pressed")}
+        >
+          <Text style={styles.buttonText}>👀 My Products</Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* Products List */}
-      <ProductsScreen />
+      {/* Products List Area (60–70%) */}
+      <View style={styles.productsWrapper}>
+        <ProductsScreen />
+      </View>
     </View>
   );
 }
@@ -63,51 +71,70 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e9ecef",
-    padding: 20,
+    backgroundColor: "#f9fafb",
+    paddingHorizontal: 20,
+    paddingTop: 50,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   greeting: {
-    fontSize: 15,
-    fontWeight: "normal",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#333",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "700",
     textAlign: "center",
-    marginVertical: 20,
+    marginVertical: 15,
     color: "#007bff",
   },
-  addButton: {
-    backgroundColor: "#28a745",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
   },
-  logoutButton: {
-    backgroundColor: "#dc3545",
+  smallButton: {
+    backgroundColor: "#28a745",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    flex: 1,
+    marginRight: 10,
+    alignItems: "center",
+  },
+  smallButtonSecondary: {
+    backgroundColor: "#17a2b8",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: "center",
+  },
+  logoutButton: {
+    backgroundColor: "#dc3545",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
   },
+  productsWrapper: {
+    flex: 0.8, // Increased from 0.65 to 0.8 (80% of available space)
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+
 });

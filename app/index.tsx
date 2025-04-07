@@ -12,11 +12,17 @@ import { auth } from "@/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
 import GoogleSignInButton from "./components/GoogleSignInButton"; // Import the new component
+import { Ionicons } from "@expo/vector-icons"; // Importing eye icon from Ionicons
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setPasswordVisibility] = useState(false);
   const router = useRouter();
+
+  const togglePasswordVisibility = () => {
+    setPasswordVisibility(!isPasswordVisible);
+  };
 
   const signIn = async () => {
     if (!email || !password) {
@@ -26,7 +32,7 @@ const Login = () => {
 
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
-      alert("Sign in successful!");
+      Alert.alert("Success", "Sign in successful!");
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Sign in failed:", error.message);
@@ -38,6 +44,8 @@ const Login = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Welcome Back</Text>
+
+        {/* Email Input Field */}
         <TextInput
           style={styles.input}
           placeholder="Enter your email"
@@ -45,24 +53,40 @@ const Login = () => {
           onChangeText={setEmail}
           value={email}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your password"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          onChangeText={setPassword}
-          value={password}
-        />
+
+        {/* Password Input Field */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.inputWithIcon}
+            placeholder="Enter your password"
+            placeholderTextColor="#aaa"
+            secureTextEntry={!isPasswordVisible}
+            onChangeText={setPassword}
+            value={password}
+          />
+          <TouchableOpacity style={styles.icon} onPress={togglePasswordVisibility}>
+            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={20} color="#aaa" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Login Button */}
         <TouchableOpacity style={styles.button} onPress={signIn}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-        <GoogleSignInButton /> Use the Google Sign-In button component
+
+        {/* Google Sign-In Button */}
+        <GoogleSignInButton /> {/* Ensure this component returns valid JSX */}
+
+        {/* Signup Link */}
         <TouchableOpacity
           style={styles.signupLink}
           onPress={() => router.push("/components/Signup")}
         >
-          <Text style={styles.signupText}>
-            Don't have an account? <Text style={styles.signupHighlight}>Sign up</Text>
+          <Text>
+            <Text style={styles.signupText}>
+              Don't have an account?{" "}
+            </Text>
+            <Text style={styles.signupHighlight}>Sign up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -87,15 +111,25 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: "#333",
   },
-  input: {
+  inputContainer: {
     width: "100%",
-    padding: 15,
     marginVertical: 10,
+    position: "relative",
+  },
+  inputWithIcon: {
+    padding: 15,
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
     backgroundColor: "#fff",
     fontSize: 16,
+    paddingRight: 40, // Ensure enough space for the icon
+  },
+  icon: {
+    position: "absolute",
+    right: 15,
+    top: "50%",
+    transform: [{ translateY: -10 }], // Center the icon vertically
   },
   button: {
     backgroundColor: "#007bff",
@@ -122,6 +156,20 @@ const styles = StyleSheet.create({
     color: "#007bff",
     fontWeight: "bold",
   },
+  input: {
+    width: "100%",
+    padding: 15,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    fontSize: 16,
+  },
 });
 
 export default Login;
+
+
+
+
