@@ -60,7 +60,7 @@ export default function ProductsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View >
       <Text style={styles.header}>Product List</Text>
       <TouchableOpacity style={styles.filterButton} onPress={filterMyItems}>
         <Text style={styles.filterButtonText}>Show My Products</Text>
@@ -110,11 +110,7 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    padding: 15,
-  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",

@@ -1,0 +1,173 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
+import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import * as Facebook from "expo-auth-session/providers/facebook";
+import { signInWithCredential, FacebookAuthProvider } from "firebase/auth";
+import { auth } from "../firebaseConfig";
+import * as Linking from "expo-linking";
+
+WebBrowser.maybeCompleteAuthSession();
+
+export default function HomeScreen() {
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Ensure this is correctly set up for your platform (web or mobile)
+  const redirectUri =
+    Platform.OS === "web"
+      ? Linking.createURL("/auth/facebook")
+      : "https://auth.expo.io/@jawadamin/facebookauth";
+
+  const [request, response, promptAsync] = Facebook.useAuthRequest({
+    clientId: "971415111424816",
+    redirectUri,
+    scopes: ["public_profile", "email"],
+    extraParams: {
+      auth_type: "rerequest",
+      display: "popup",
+    },
+  });
+
+  const handleSignIn = async (accessToken: string) => {
+    try {
+      console.log("Attempting to sign in with token:", accessToken); // Log the access token
+      const credential = FacebookAuthProvider.credential(accessToken);
+      await signInWithCredential(auth, credential);
+      console.log("Firebase login successful!"); // Log successful login
+      router.replace("/(tabs)"); // Navigate to Home after successful login
+    } catch (error: any) {
+      console.error("Firebase Auth Error:", error);
+      console.log("Error code:", error.code); // Log the error code
+
+      // Handle various errors
+      if (error.code === "auth/invalid-credential") {
+        Alert.alert(
+          "Session Expired",
+          "The login session has expired. Please try again.",
+          [{ text: "OK", onPress: () => setAuthError(null) }]
+        );
+      } else if (error.code === "auth/account-exists-with-different-credential") {
+        Alert.alert(
+          "Account Conflict",
+          "An account with this email already exists.",
+          [{ text: "OK", onPress: () => router.push("/") }]
+        );
+      } else {
+        Alert.alert("Authentication Failed", error.message);
+      }
+      setAuthError(error.message);
+    }
+  };
+
+  useEffect(() => {
+    const handleAuthResponse = async () => {
+      if (!response) return;
+
+      console.log("🔁 Facebook response:", response);
+
+      if (response.type === "success" && response.authentication?.accessToken) {
+        setLoading(true);
+        try {
+          // Handle the authentication flow
+          const accessToken = response.authentication.accessToken;
+          console.log("Access token received:", accessToken); // Log the access token
+          await handleSignIn(accessToken);
+        } catch (error) {
+          console.error("Error during sign-in:", error);
+          setAuthError("Failed to sign in");
+        } finally {
+          setLoading(false);
+        }
+      } else if (response.type === "error") {
+        console.error("Facebook error:", response.error);
+        if (response.error?.code === "ERR_REQUEST_LIMIT_EXCEEDED") {
+          Alert.alert(
+            "Too Many Attempts",
+            "Please wait a few minutes before trying again.",
+            [{ text: "OK", onPress: () => setAuthError(null) }]
+          );
+        } else {
+          Alert.alert("Error", response.error?.message || "Login failed");
+        }
+        setAuthError(response.error?.message || "Login failed");
+      } else if (response.type === "dismiss") {
+        setAuthError("Login canceled by user");
+      }
+    };
+
+    handleAuthResponse();
+  }, [response]);
+
+  return (
+    <View style={styles.container}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#1877F2" />
+      ) : (
+        <>
+          {authError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{authError}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.disabledButton]}
+            onPress={() => promptAsync()}
+            disabled={!request || loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? "Processing..." : "Continue with Facebook"}
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  button: {
+    backgroundColor: "#1877F2",
+    padding: 15,
+    borderRadius: 8,
+    width: "100%",
+    maxWidth: 300,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  errorContainer: {
+    backgroundColor: "#fee",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#f99",
+  },
+  errorText: {
+    color: "#d33",
+    textAlign: "center",
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+});

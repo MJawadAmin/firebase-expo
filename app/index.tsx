@@ -13,6 +13,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "expo-router";
 import GoogleSignInButton from "./components/GoogleSignInButton"; // Import the new component
 import { Ionicons } from "@expo/vector-icons"; // Importing eye icon from Ionicons
+import Facebookauth from './Facebookauth'
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -74,8 +75,12 @@ const Login = () => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        {/* Google Sign-In Button */}
-        <GoogleSignInButton /> {/* Ensure this component returns valid JSX */}
+        {/* Google Sign-In Button
+        <GoogleSignInButton /> Ensure this component returns valid JSX
+         */}
+         <TouchableOpacity style={styles.button} onPress={signIn}>
+         <Facebookauth />
+         </TouchableOpacity>
 
         {/* Signup Link */}
         <TouchableOpacity
