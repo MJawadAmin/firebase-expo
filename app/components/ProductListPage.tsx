@@ -60,64 +60,55 @@ export default function ProductsScreen() {
   };
 
   return (
-    <View >
-      <Text style={styles.header}>Product List</Text>
-      <TouchableOpacity style={styles.filterButton} onPress={filterMyItems}>
-        <Text style={styles.filterButtonText}>Show My Products</Text>
-      </TouchableOpacity>
-      {items.length === 0 ? (
-        <Text style={styles.noData}>No items available.</Text>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.textContainer}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemDetails}>{item.details}</Text>
-                <Text style={styles.timestamp}>{item.timestamp}</Text>
-                <View style={styles.buttonContainer}>
-                  {item.userId === currentUser?.uid && (
-                    <>
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/components/EditItemScreen",
-                            params: { id: item.id, name: item.name, details: item.details },
-                          })
-                        }
-                      >
-                        <Text style={styles.buttonText}>Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => deleteItem(item.id)}
-                      >
-                        <Text style={styles.buttonText}>Delete</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-              </View>
+    <FlatList
+      ListHeaderComponent={
+        <>
+          {/* Static Filter Button */}
+          <TouchableOpacity style={styles.filterButton} onPress={filterMyItems}>
+            <Text style={styles.filterButtonText}>Show My Products</Text>
+          </TouchableOpacity>
+          <Text style={styles.header}>Product List</Text>
+        </>
+      }
+      data={items}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemDetails}>{item.details}</Text>
+            <Text style={styles.timestamp}>{item.timestamp}</Text>
+            <View style={styles.buttonContainer}>
+              {item.userId === currentUser?.uid && (
+                <>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/components/EditItemScreen",
+                        params: { id: item.id, name: item.name, details: item.details },
+                      })
+                    }
+                  >
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => deleteItem(item.id)}
+                  >
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
-          )}
-        />
+          </View>
+        </View>
       )}
-    </View>
+    />
   );
 }
 
 const styles = StyleSheet.create({
-
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 15,
-    color: "#333",
-  },
   filterButton: {
     backgroundColor: "#007bff",
     padding: 10,
@@ -129,11 +120,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
   },
-  noData: {
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
     textAlign: "center",
-    fontSize: 18,
-    color: "gray",
-    marginTop: 20,
+    marginBottom: 15,
+    color: "#333",
   },
   card: {
     flexDirection: "column",
