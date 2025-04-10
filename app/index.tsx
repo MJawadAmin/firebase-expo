@@ -78,10 +78,7 @@ const Login = () => {
         {/* Google Sign-In Button
         <GoogleSignInButton /> Ensure this component returns valid JSX
          */}
-         <TouchableOpacity style={styles.button} onPress={signIn}>
          <Facebookauth />
-         </TouchableOpacity>
-
         {/* Signup Link */}
         <TouchableOpacity
           style={styles.signupLink}

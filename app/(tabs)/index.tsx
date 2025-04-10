@@ -1,5 +1,3 @@
-// app/home.tsx
-
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
@@ -9,10 +7,10 @@ import ProductsScreen from "../components/ProductListPage";
 
 export default function HomeScreen() {
   const [userName, setUserName] = useState<string | null>(null);
-  const [error, setError] = useState<boolean>(false); // State to handle error
+  const [error, setError] = useState<boolean>(false);
   const router = useRouter();
 
-  // Redirect if user logs out or has an error
+  // This should be outside of any condition or render logic
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -26,7 +24,7 @@ export default function HomeScreen() {
     });
 
     return () => unsubscribe(); // Cleanup listener
-  }, []);
+  }, []); // The effect runs only once on mount
 
   // Logout function with alert and redirect
   const handleLogout = async () => {
@@ -62,7 +60,7 @@ export default function HomeScreen() {
       {/* Header Section */}
       <View style={styles.header}>
         {error ? (
-          <TouchableOpacity style={styles.loginButton} onPress={() => router.push("/")}>
+          <TouchableOpacity style={styles.logoutButton} onPress={() => router.push("/")}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
         ) : (
@@ -127,14 +125,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  loginButton:{   backgroundColor: "#007bff",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4},
   logoutButton: {
     backgroundColor: "#dc3545",
     paddingVertical: 10,
