@@ -1,4 +1,7 @@
 {
+    "cli": {
+      "version": ">= 3.13.0"
+    },
     "build": {
       "development": {
         "developmentClient": true,
@@ -7,14 +10,7 @@
       "preview": {
         "distribution": "internal"
       },
-      "production": {
-        "android": {
-          "buildType": "apk"
-        },
-        "ios": {
-          "simulator": true
-        }
-      }
+      "production": {}
     }
   }
   

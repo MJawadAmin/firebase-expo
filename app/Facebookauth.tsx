@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -17,12 +17,11 @@ import * as Linking from "expo-linking";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export default function HomeScreen() {
+export default function FacebookLoginScreen() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Ensure this is correctly set up for your platform (web or mobile)
   const redirectUri =
     Platform.OS === "web"
       ? Linking.createURL("/auth/facebook")
@@ -37,99 +36,74 @@ export default function HomeScreen() {
       display: "popup",
     },
   });
-
-  const handleSignIn = async (accessToken: string) => {
-    try {
-      console.log("Attempting to sign in with token:", accessToken); // Log the access token
-      const credential = FacebookAuthProvider.credential(accessToken);
-      await signInWithCredential(auth, credential);
-      console.log("Firebase login successful!"); // Log successful login
-      router.replace("/(tabs)/Home"); // Navigate to Home after successful login
-    } catch (error: any) {
-      console.error("Firebase Auth Error:", error);
-      console.log("Error code:", error.code); // Log the error code
-
-      // Handle various errors
-      if (error.code === "auth/invalid-credential") {
-        Alert.alert(
-          "Session Expired",
-          "The login session has expired. Please try again.",
-          [{ text: "OK", onPress: () => setAuthError(null) }]
-        );
-      } else if (error.code === "auth/account-exists-with-different-credential") {
-        Alert.alert(
-          "Account Conflict",
-          "An account with this email already exists.",
-          [{ text: "OK", onPress: () => router.push("/") }]
-        );
-      } else {
-        Alert.alert("Authentication Failed", error.message);
-      }
-      setAuthError(error.message);
-    }
-  };
-
   useEffect(() => {
-    const handleAuthResponse = async () => {
-      if (!response) return;
-
-      console.log("🔁 Facebook response:", response);
-
-      if (response.type === "success" && response.authentication?.accessToken) {
+    console.log("📩 Facebook login response:", response);
+  
+    const authenticate = async (accessToken: string) => {
+      try {
+        console.log("🔑 Received access token:", accessToken);
         setLoading(true);
-        try {
-          // Handle the authentication flow
-          const accessToken = response.authentication.accessToken;
-          console.log("Access token received:", accessToken); // Log the access token
-          await handleSignIn(accessToken);
-        } catch (error) {
-          console.error("Error during sign-in:", error);
-          setAuthError("Failed to sign in");
-        } finally {
-          setLoading(false);
-        }
-      } else if (response.type === "error") {
-        console.error("Facebook error:", response.error);
-        if (response.error?.code === "ERR_REQUEST_LIMIT_EXCEEDED") {
-          Alert.alert(
-            "Too Many Attempts",
-            "Please wait a few minutes before trying again.",
-            [{ text: "OK", onPress: () => setAuthError(null) }]
-          );
-        } else {
-          Alert.alert("Error", response.error?.message || "Login failed");
-        }
-        setAuthError(response.error?.message || "Login failed");
-      } else if (response.type === "dismiss") {
-        setAuthError("Login canceled by user");
+        const credential = FacebookAuthProvider.credential(accessToken);
+        console.log("🧾 Firebase credential created:", credential);
+  
+        const userCredential = await signInWithCredential(auth, credential);
+        console.log("✅ Firebase sign-in successful:", userCredential.user);
+  
+        router.replace("/(tabs)/Home");
+      } catch (error: any) {
+        console.error("🔥 Firebase sign-in error:", error);
+        Alert.alert("Login Error", error.message || "Something went wrong.");
+        setAuthError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
-
-    handleAuthResponse();
+  
+    if (!response) {
+      console.log("⌛ Waiting for Facebook login response...");
+      return;
+    }
+  
+    if (response.type === "success") {
+      const accessToken = response.authentication?.accessToken;
+      console.log("📦 Facebook response success. Access Token:", accessToken);
+  
+      if (accessToken) {
+        authenticate(accessToken);
+      } else {
+        console.warn("⚠️ No access token in authentication response:", response.authentication);
+        Alert.alert("Login Error", "No access token received from Facebook.");
+      }
+    } else if (response.type === "error") {
+      console.error("❌ Facebook response error:", response.error);
+      Alert.alert("Login Error", "Something went wrong during Facebook login.");
+    } else {
+      console.log("🌀 Facebook response type:", response.type);
+    }
   }, [response]);
+  
 
   return (
     <View style={styles.container}>
+      {authError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{authError}</Text>
+        </View>
+      )}
+
       {loading ? (
         <ActivityIndicator size="large" color="#1877F2" />
       ) : (
-        <>
-          {authError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{authError}</Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.disabledButton]}
-            onPress={() => promptAsync()}
-            disabled={!request || loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Processing..." : "Continue with Facebook"}
-            </Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity
+          style={styles.button}
+          disabled={!request}
+          onPress={() => {
+            setAuthError(null);
+            promptAsync();
+          }}
+        >
+          <Text style={styles.buttonText}>Continue with Facebook</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -166,8 +140,5 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#d33",
     textAlign: "center",
-  },
-  disabledButton: {
-    opacity: 0.7,
   },
 });
