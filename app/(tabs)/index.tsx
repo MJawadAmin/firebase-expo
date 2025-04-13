@@ -1,79 +1,48 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 import ProductsScreen from "../components/ProductListPage";
 
 export default function HomeScreen() {
-  const [userName, setUserName] = useState<string | null>(null);
-  const [error, setError] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string | null>(null); // State for storing the user's name
   const router = useRouter();
 
-  // This should be outside of any condition or render logic
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserName(user.displayName || user.email || "User");
-        setError(false); // Reset error state if user is authenticated
-      } else {
-        setUserName(null);
-        setError(true); // Set error state if no user is authenticated
-        router.replace("/"); // Redirect to login screen if no user
+    // Fetch logged-in user's name from Firebase Auth
+    const fetchUserName = () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        // If user has a displayName, use it; otherwise, fallback to email
+        setUserName(currentUser.displayName || currentUser.email || "User");
       }
-    });
+    };
 
-    return () => unsubscribe(); // Cleanup listener
-  }, []); // The effect runs only once on mount
+    fetchUserName(); // Fetch the name when the component mounts
+  }, []);
 
-  // Logout function with alert and redirect
   const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to log out?",
-      [
-        {
-          text: "Cancel",
-          onPress: () => console.log("Logout canceled"),
-          style: "cancel",
-        },
-        {
-          text: "Logout",
-          onPress: async () => {
-            try {
-              await signOut(auth); // Clear the credentials from Firebase
-              console.log("Logout successful");
-              // The listener from `onAuthStateChanged` will handle the redirection
-            } catch (error: any) {
-              console.error("Logout failed:", error.message);
-              Alert.alert("Error", "Failed to logout. Please try again.");
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    try {
+      await signOut(auth);
+      router.replace("/");
+    } catch (error: any) {
+      console.error("Logout failed:", error.message);
+      Alert.alert("Error", "Failed to logout. Please try again.");
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
+      {/* Welcome Section */}
       <View style={styles.header}>
-        {error ? (
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.push("/")}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-        ) : (
-          <>
-            <Text style={styles.greeting}>Hello, {userName}!</Text>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.buttonText}>Logout</Text>
-            </TouchableOpacity>
-          </>
-        )}
+        <Text style={styles.greeting}>Hello, {userName}!</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Title */}
+      {/* App Title */}
       <Text style={styles.title}>Welcome to CRUD App</Text>
 
       {/* Add Product Button */}
@@ -84,7 +53,7 @@ export default function HomeScreen() {
         <Text style={styles.buttonText}>Add Product</Text>
       </TouchableOpacity>
 
-      {/* Product List Component */}
+      {/* Products List */}
       <ProductsScreen />
     </View>
   );
@@ -103,8 +72,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greeting: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "normal",
     color: "#333",
   },
   title: {

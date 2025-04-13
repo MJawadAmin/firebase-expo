@@ -26,7 +26,7 @@ export default function HomeScreen() {
   const redirectUri =
     Platform.OS === "web"
       ? Linking.createURL("/auth/facebook")
-      : "https://auth.expo.io/@jawadamin/facebookauth";
+      : "https://auth.expo.io/@jawadamin/firebase-expo";
 
   const [request, response, promptAsync] = Facebook.useAuthRequest({
     clientId: "971415111424816",
@@ -44,7 +44,7 @@ export default function HomeScreen() {
       const credential = FacebookAuthProvider.credential(accessToken);
       await signInWithCredential(auth, credential);
       console.log("Firebase login successful!"); // Log successful login
-      router.replace("/(tabs)"); // Navigate to Home after successful login
+      router.replace("/(tabs)/Home"); // Navigate to Home after successful login
     } catch (error: any) {
       console.error("Firebase Auth Error:", error);
       console.log("Error code:", error.code); // Log the error code
