@@ -34,7 +34,7 @@ const Login = () => {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       Alert.alert("Success", "Sign in successful!");
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/HomeSceen");
     } catch (error: any) {
       console.error("Sign in failed:", error.message);
       Alert.alert("Error", "Sign in failed: " + error.message);

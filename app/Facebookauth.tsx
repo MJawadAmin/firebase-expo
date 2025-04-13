@@ -49,7 +49,7 @@ export default function FacebookLoginScreen() {
         const userCredential = await signInWithCredential(auth, credential);
         console.log("✅ Firebase sign-in successful:", userCredential.user);
   
-        router.replace("/(tabs)/Home");
+        router.replace("/(tabs)/HomeSceen");
       } catch (error: any) {
         console.error("🔥 Firebase sign-in error:", error);
         Alert.alert("Login Error", error.message || "Something went wrong.");
